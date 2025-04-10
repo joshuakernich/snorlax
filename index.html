@@ -9,9 +9,11 @@
 	<script type="text/javascript">
 		$(function(){
 			window.setupTone = async function(){
+
 				await Tone.start()
 
 				window.meter = new Tone.Meter();
+				window.meter.normalRange = true;
 				window.mic = new Tone.UserMedia().connect(meter);
 				window.sampleRate = Tone.getContext().sampleRate;
 				window.waveform = new Tone.Waveform();
@@ -27,15 +29,28 @@
 
 			$(document).click(window.setupTone);
 
+			let danger = 15;
+			$('danger').css('height',danger+'%');
 
+			const SCALE = 5;
 			function initApp(){
 				
+				$(document).off();
+
+				$(document).on('touchmove',function(e){
+					let y = e.touches[0].screenY/$(document).innerHeight();
+					danger = (1-y)*100;
+					$('danger').css('height',danger+'%');
+				});
+
 				setInterval(function(){
 
-					let l = window.meter.getValue();
-					let isDanger = (l>-30);
+					let l = window.meter.getValue() * SCALE * 100;
+					let isDanger = (l>danger);
 
-					$('h2').text(l.toFixed(2)).attr('danger',isDanger);
+
+					$('h2').text((l<10?'0':'')+l.toFixed(2)+' %').attr('danger',isDanger);
+					$('fill').css('height',l+'%').attr('danger',isDanger);
 
 					if(isDanger) navigator.vibrate([100, 30, 100, 30, 100, 30, 200, 30, 200, 30, 200, 30, 100, 30, 100, 30, 100]);
 				},100)
@@ -47,15 +62,92 @@
 			background: black;
 			color: white;
 			text-align: center;
+			width: 100vw;
+			height: 100vh;
+			padding: 0px;
+			margin: 0px;
+			font-family: monospace;
+			overflow: hidden;
+		}
+
+		body:before{
+			content: "";
+			position: absolute;
+			display: block;
+			top: 0px;
+			left: 0px;
+			right: 0px;
+			bottom: 0px;
+			background: url(./snorlax.jpeg);
+			background-size: 105%;
+			background-repeat: no-repeat;
+			background-position: center;
+
+			opacity: 0.2;
+		}
+
+		h1{
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			right: 0px;
+			line-height: 50vh;
+			font-size: 15vw;
+		}
+
+		h2{
+			position: absolute;
+			bottom: 0px;
+			left: 0px;
+			right: 0px;
+			line-height: 50vh;
+			font-size: 10vw;
 		}
 
 		h2[danger='true']{
 			color:red;
 		}
+
+		fill[danger='true']{
+			background: rgba(255, 0, 0, 0.2);
+		}
+
+		gauge{
+			position: absolute;
+			display: block;
+			top: 0px;
+			left: 0px;
+			right: 0px;
+			bottom: 0px;
+		}
+
+		fill{
+			position: absolute;
+			display: block;
+			left: 0px;
+			right: 0px;
+			bottom: 0px;
+			height: 0%;
+			background: rgba(255,255,255,0.1);
+		}
+
+		danger{
+			position: absolute;
+			display: block;
+			left: 0px;
+			right: 0px;
+			bottom: 0px;
+			height: 0%;
+			border-top: 5px solid red;
+		}
 	</style>
 </head>
 <body>
+	<gauge>
+		<fill></fill>
+		<danger></danger>
+	</gauge>
 	<h1>Snorlax</h1>
-	<h2></h2>
+	<h2>Tap to start</h2>
 </body>
 </html>
