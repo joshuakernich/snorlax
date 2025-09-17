@@ -33,28 +33,82 @@
 			$('danger').css('height',danger+'%');
 
 			const SCALE = 5;
+			const FPS = 50;
+			const MAX_SECONDS = 10;
+
+			let countDanger = 0;
+
 			function initApp(){
+
+				$('h1').remove();
 				
 				$(document).off();
 
-				$(document).on('touchmove',function(e){
-					let y = e.touches[0].screenY/$(document).innerHeight();
-					danger = (1-y)*100;
-					$('danger').css('height',danger+'%');
-				});
+				let sliderAmplitude = new Slider();
+				sliderAmplitude.$el.appendTo('sliders');
+
+				let sliderThreshold = new Slider();
+				sliderThreshold.$el.appendTo('sliders');
 
 				setInterval(function(){
 
 					let l = window.meter.getValue() * SCALE * 100;
-					let isDanger = (l>danger);
+					//let isDanger = (l>danger);
+					//$('h2').text((l<10?'0':'')+l.toFixed(2)+' %').attr('danger',isDanger);
+		
 
+					sliderAmplitude.setValue(l);
 
-					$('h2').text((l<10?'0':'')+l.toFixed(2)+' %').attr('danger',isDanger);
-					$('fill').css('height',l+'%').attr('danger',isDanger);
+					if( sliderAmplitude.isOverThreshold ) countDanger++;
+					else if(countDanger) countDanger--;
 
-					if(isDanger) navigator.vibrate([100, 30, 100, 30, 100, 30, 200, 30, 200, 30, 200, 30, 100, 30, 100, 30, 100]);
-				},100)
+					sliderThreshold.setValue(countDanger/MAX_SECONDS);
+
+					if( sliderThreshold.isOverThreshold ) navigator.vibrate([100, 30, 100, 30, 100, 30, 200, 30, 200, 30, 200, 30, 100, 30, 100, 30, 100]);
+				},FPS)
+
+				
 			}
+
+			function Slider() {
+				let self = this;
+				self.$el = $('<slider>');
+				let $fill = $('<fill>').appendTo(self.$el);
+				let $line = $('<line>').appendTo(self.$el);
+
+				self.p = 0;
+				self.pThreshold = 0.5;
+				self.isOverThreshold = false;
+
+				self.setValue = function(p){
+					self.p = p;
+					self.isOverThreshold = self.p>self.pThreshold;
+					$fill.css('height',p+'%').attr('danger',self.isOverThreshold);
+				}
+
+				self.$el.on('mousemove',function(e){
+					setPageY(e.pageY);
+				});
+
+				self.$el.on('touchmove',function(e){
+					setPageY(e.touches[0].pageY);
+				});
+
+				function setPageY(pageY){
+					let o = self.$el.offset();
+					let p = (pageY-o.top)/self.$el.height();
+					setThreshold(p);
+				}
+
+				function setThreshold(p){
+					self.pThreshold = (1-p)*100;
+					$line.css('height',self.pThreshold+'%');
+				}
+			}
+
+			
+
+
 		})
 	</script>
 	<style type="text/css">
@@ -68,6 +122,7 @@
 			margin: 0px;
 			font-family: monospace;
 			overflow: hidden;
+			pointer-events: none;
 		}
 
 		body:before{
@@ -91,8 +146,8 @@
 			top: 0px;
 			left: 0px;
 			right: 0px;
-			line-height: 50vh;
-			font-size: 15vw;
+			line-height: 10vh;
+			font-size: 5vw;
 		}
 
 		h2{
@@ -100,8 +155,8 @@
 			bottom: 0px;
 			left: 0px;
 			right: 0px;
-			line-height: 50vh;
-			font-size: 10vw;
+			line-height: 10vh;
+			font-size: 5vw;
 		}
 
 		h2[danger='true']{
@@ -109,16 +164,18 @@
 		}
 
 		fill[danger='true']{
-			background: rgba(255, 0, 0, 0.2);
+			background: rgba(255, 0, 0, 0.5);
 		}
 
-		gauge{
-			position: absolute;
-			display: block;
-			top: 0px;
-			left: 0px;
-			right: 0px;
-			bottom: 0px;
+		slider{
+			display: inline-block;
+			width: 20%;
+			height: 100%;
+			position: relative;
+			backdrop-filter: blur(10px);
+			box-shadow: inset 0px 0px 20px black;
+			margin: 0px 5vw;
+			pointer-events: auto;
 		}
 
 		fill{
@@ -128,10 +185,10 @@
 			right: 0px;
 			bottom: 0px;
 			height: 0%;
-			background: rgba(255,255,255,0.1);
+			background: rgba(255,255,255,0.5);
 		}
 
-		danger{
+		line{
 			position: absolute;
 			display: block;
 			left: 0px;
@@ -140,14 +197,16 @@
 			height: 0%;
 			border-top: 5px solid red;
 		}
+
+		sliders{
+			position: absolute;
+			display: block;
+			inset: 5vw;
+		}
 	</style>
 </head>
 <body>
-	<gauge>
-		<fill></fill>
-		<danger></danger>
-	</gauge>
-	<h1>Snorlax</h1>
-	<h2>Tap to start</h2>
+	<sliders></sliders>
+	<h1>SNORLAX<br>Tap to begin</h1>
 </body>
 </html>
