@@ -35,8 +35,12 @@
 			const SCALE = 5;
 			const FPS = 50;
 			const MAX_SECONDS = 10;
+			const MAX_HISTORY = MAX_SECONDS * FPS;
+
 
 			let countDanger = 0;
+
+			let history = [];
 
 			function initApp(){
 
@@ -44,25 +48,26 @@
 				
 				$(document).off();
 
-				let sliderAmplitude = new Slider();
+				let sliderAmplitude = new Slider('Live amplitude');
 				sliderAmplitude.$el.appendTo('sliders');
 
-				let sliderThreshold = new Slider();
+				let sliderThreshold = new Slider('Dangerous sound in the last 10 seconds');
 				sliderThreshold.$el.appendTo('sliders');
 
 				setInterval(function(){
 
 					let l = window.meter.getValue() * SCALE * 100;
-					//let isDanger = (l>danger);
-					//$('h2').text((l<10?'0':'')+l.toFixed(2)+' %').attr('danger',isDanger);
-		
-
+			
 					sliderAmplitude.setValue(l);
 
-					if( sliderAmplitude.isOverThreshold ) countDanger++;
-					else if(countDanger) countDanger--;
+					history.unshift( sliderAmplitude.isOverThreshold?1:0 );
+					if(history.length>MAX_HISTORY) history.length = MAX_HISTORY;
 
-					sliderThreshold.setValue(countDanger/MAX_SECONDS);
+
+					countDanger = 0;
+					for(var h in history) countDanger += history[h];
+
+					sliderThreshold.setValue(countDanger/MAX_HISTORY * 100);
 
 					if( sliderThreshold.isOverThreshold ) navigator.vibrate([100, 30, 100, 30, 100, 30, 200, 30, 200, 30, 200, 30, 100, 30, 100, 30, 100]);
 				},FPS)
@@ -70,11 +75,12 @@
 				
 			}
 
-			function Slider() {
+			function Slider(label) {
 				let self = this;
 				self.$el = $('<slider>');
 				let $fill = $('<fill>').appendTo(self.$el);
 				let $line = $('<line>').appendTo(self.$el);
+				let $label = $('<label>').appendTo(self.$el).text(label);
 
 				self.p = 0;
 				self.pThreshold = 0.5;
@@ -196,6 +202,14 @@
 			bottom: 0px;
 			height: 0%;
 			border-top: 5px solid red;
+		}
+
+		label{
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			right: 0px;
+			padding: 1vw;
 		}
 
 		sliders{
